@@ -22,6 +22,10 @@ class User(models.Model):
     def __str__(self):
         return self.username
     
+    """
+    The save method in the User model 
+ensures old profile pictures are deleted when updated.
+    """
     def save(self, *args, **kwargs):
         # Delete the old file when replacing by updating the file
         try:
