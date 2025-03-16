@@ -1,18 +1,36 @@
 from django.db import models
-
+from django.core.exceptions import ValidationError
 # Create your models here.
+
+def validate_image_size(value):
+    filesize = value.size
+    
+    if filesize > 5 * 1024 * 1024:
+        raise ValidationError("The maximum file size that can be uploaded is 5MB")
+    else:
+        return value
 class User(models.Model):
     user_id = models.AutoField(primary_key=True, null=False)
     username = models.CharField(max_length=100, null=False, unique=True)
     email = models.EmailField(unique=True, null=False)
     password = models.CharField(max_length=100, null=False)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True, validators=[validate_image_size], help_text="Maximum file size allowed is 5MB")
     bio = models.TextField(blank=True)
     registration_date = models.DateTimeField(auto_now_add=True, null=False)
     last_login = models.DateTimeField(auto_now=True, null=False)
     
     def __str__(self):
         return self.username
+    
+    def save(self, *args, **kwargs):
+        # Delete the old file when replacing by updating the file
+        try:
+            this = User.objects.get(user_id=self.user_id)
+            if this.profile_picture != self.profile_picture:
+                this.profile_picture.delete(save=False)
+        except User.DoesNotExist:
+            pass
+        super(User, self).save(*args, **kwargs)
     
 class Post(models.Model):
     post_id = models.AutoField(primary_key=True, null=False)
@@ -24,7 +42,7 @@ class Post(models.Model):
     likes = models.IntegerField(default=0, null=False)
     dislikes = models.IntegerField(default=0, null=False)
     views = models.IntegerField(default=0, null=False)
-    comments = models.IntegerField(default=0, null=False)
+    comment_count = models.IntegerField(default=0, null=False)
     status = models.CharField(max_length=20, null=False)
     moderation_flagged = models.BooleanField(default=False, null=False)
     moderation_reason = models.TextField(blank=True)
