@@ -1,0 +1,82 @@
+# MindScribe
+
+MindScribe is a sophisticated blogging platform built with Django that combines traditional blogging capabilities with AI-powered features to enhance content creation and user engagement.
+
+## 🌟 Features
+
+### Core Functionality
+
+- User authentication and profile management
+- Rich text blog post creation and editing
+- Interactive engagement through likes and dislikes
+- Comment system with threading support
+- View tracking and analytics
+
+### AI-Powered Enhancements
+
+- Automatic content summarization
+- Keyword extraction
+- Sentiment analysis
+- Multi-language translation support
+- Content moderation flagging
+
+### Content Management
+
+- Post status management (draft/published)
+- Tag-based categorization
+- Automated moderation system
+- Profile picture management
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Python 3.8+
+- Django 5.1+
+- Virtual environment (recommended)
+
+### Installation
+
+1. Clone the repository
+
+```bash
+
+git clone https://github.com/yourusername/mindscribe.git
+cd mindscribe
+```
+
+2. Create and activate virtual environment
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependecies
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Setup the database
+
+```bash
+python manage.py migrate
+```
+
+5. Run the development server
+
+```bash
+python manage.py runserver
+```
+
+### 🔧 Configuration
+
+Create a .env file in the project root and configure the following variables:
+
+```python
+SECRET_KEY=your_secret_key
+DEBUG=True
+DATABASE_URL=your_database_url
+AI_SERVICE_KEY=your_ai_service_key
+```

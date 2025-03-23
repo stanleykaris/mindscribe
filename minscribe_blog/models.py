@@ -97,6 +97,10 @@ class Comments(models.Model):
     dislikes = models.IntegerField(default=0, null=False)
     moderation_flagged = models.BooleanField(default=False, null=False)
     moderation_reason = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
 
     def __str__(self):
         return f"{self.author_id} - {self.post_id}"
