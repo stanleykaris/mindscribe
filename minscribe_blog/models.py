@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 # Create your models here.
 
 def validate_image_size(value):
@@ -54,6 +55,9 @@ class Post(models.Model):
     ai_keywords = models.TextField(blank=True)
     ai_sentiment = models.CharField(max_length=20, blank=True)
     ai_translation = models.TextField(blank=True)
+    has_poll = models.BooleanField(default=False)
+    has_quiz = models.BooleanField(default=False)
+    has_livestream = models.BooleanField(default=False)
     
     def __str__(self):
         return self.title
@@ -61,6 +65,7 @@ class Post(models.Model):
 class Tag(models.Model):
     tag_id = models.AutoField(primary_key=True, null=False)
     name = models.CharField(max_length=50, unique=True, null=False)
+    slug = models.SlugField(unique=True, null=False, default=name)
     
     def __str__(self):
         return self.name
@@ -106,10 +111,17 @@ class Comments(models.Model):
         return f"{self.author_id} - {self.post_id}"
     
 class CognitiveProfile(models.Model):
+    # Defining a lifestyle choice list
+    LEARNING_STYLE_CHOICES = [
+        ('Visual', 'Visual'),
+        ('Auditory', 'Auditory'),
+        ('Reading/Writing', 'Reading/Writing'),
+        ('Kinesthetic', 'Kinesthetic'),
+    ]
     cognitive_profile_id = models.AutoField(primary_key=True, null=False)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     interest_vectors = models.JSONField(null=False)
-    learning_style = models.CharField(max_length=50, null=False)
+    learning_style = models.CharField(max_length=50, null=False, choices=LEARNING_STYLE_CHOICES)
     content_preferences = models.JSONField(null=False)
     cognitive_profile = models.JSONField(null=False)
     social_interactions = models.JSONField(null=False)
@@ -128,3 +140,54 @@ class Recommendation(models.Model):
     
     def __str__(self):
         return f"{self.user_id} - {self.post_id}"
+    
+class Poll(models.Model):
+    poll_id = models.AutoField(primary_key=True)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE, null=False)
+    question = models.CharField(max_length=200)
+    created_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.question
+    
+class PollChoice(models.Model):
+    choice_id = models.AutoField(primary_key=True)
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE)
+    choice_text = models.CharField(max_length=200)
+    votes = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return self.choice_text
+    
+class Quiz(models.Model):
+    quiz_id = models.AutoField(primary_key=True)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    created_date = models.DateTimeField(auto_now_add=True)
+    passing_score = models.IntegerField(default=70)
+    
+    def is_expired(self):
+        """Checks if the quiz has expired"""
+        return timezone.now() > self.end_date
+    
+class QuizQuestion(models.Model):
+    question_id = models.AutoField(primary_key=True)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    question_text = models.TextField()
+    correct_answer = models.CharField(max_length=200)
+    points = models.IntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField()
+    
+class LiveStream(models.Model):
+    stream_id = models.AutoField(primary_key=True)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    stream_url = models.URLField()
+    scheduled_time = models.DateTimeField()
+    is_live = models.BooleanField(default=False)
+    stream_key = models.CharField(max_length=100)
