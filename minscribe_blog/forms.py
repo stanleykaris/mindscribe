@@ -18,10 +18,19 @@ class UserForm(forms.ModelForm):
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
         
-        if password and confirm_password and password != confirm_password:
-            raise forms.ValidationError("Passwords do not match")
-        return cleaned_data
-
+        if password and confirm_password:
+            if password != confirm_password:
+                raise forms.ValidationError("Passwords do not match.")
+            
+            if len(password) < 8:
+                raise forms.ValidationError("Password must be at least 8 characters long.")
+            
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            if not any(char.isdigit() for char in password):
+                raise forms.ValidationError("Password must contain at least one digit.")
+        return password
 # A form for creating and editing post objects
 class PostForm(forms.ModelForm):
     class Meta:

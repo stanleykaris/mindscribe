@@ -1,23 +1,38 @@
 from rest_framework import serializers
-from .models import User, Poll, PollChoice, QuizQuestion, Quiz
+from .models import User, Poll, PollChoice, QuizQuestion, Quiz, QuizSubmission
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name', 'phone_number', 'profile_image', 'is_active', 'is_staff', 'is_superuser', 'date_joined', 'last_login', 'groups', 'user_permissions')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name', 'phone_number', 'profile_image')
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'email': {'required': True},
+            'username': {'required': True}
+            }
+        
+    def validate(self, data):
+        # Password validation
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return data
 
     def create(self, validated_data):
-        user = User(
-            email=validated_data['email'],
+        validated_data.pop('confirm_password', None)
+        
+        user = User.objects.create_user(
             username=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            phone_number=validated_data['phone_number'],
-            profile_image=validated_data['profile_image']
+            email=validated_data['email'],
+            password=validated_data['password']
         )
         user.set_password(validated_data['password'])
+        
+        for field in ['first_name', 'last_name', 'phone_number', 'profile_image']:
+            if field in validated_data:
+                setattr(user, field, validated_data[field])
+                
         user.save()
+        
         return user
     
 class PollChoiceSerializer(serializers.ModelSerializer):
@@ -61,3 +76,8 @@ class QuizSerializer(serializers.ModelSerializer):
             QuizQuestion.objects.create(quiz=quiz, **question_data)
 
         return quiz
+
+class QuizSubmissionSerializer(serializers.Serializer):
+    class Meta:
+        model = QuizSubmission
+        fields = ['submission_id', 'quiz_id', 'choice', 'submission_date']

@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.conf import settings
 # Create your models here.
 
 def validate_image_size(value):
@@ -166,7 +167,8 @@ class Quiz(models.Model):
     post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()
-    created_date = models.DateTimeField(auto_now_add=True)
+    created_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(default=timezone.now)
     passing_score = models.IntegerField(default=70)
     
     def is_expired(self):
@@ -180,8 +182,8 @@ class QuizQuestion(models.Model):
     correct_answer = models.CharField(max_length=200)
     points = models.IntegerField(default=1)
     is_active = models.BooleanField(default=True)
-    created_date = models.DateTimeField(auto_now_add=True)
-    end_date = models.DateTimeField()
+    created_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(default=timezone.now)
     
 class LiveStream(models.Model):
     stream_id = models.AutoField(primary_key=True)
@@ -191,3 +193,15 @@ class LiveStream(models.Model):
     scheduled_time = models.DateTimeField()
     is_live = models.BooleanField(default=False)
     stream_key = models.CharField(max_length=100)
+    
+class QuizSubmission(models.Model):
+    submission_id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    quiz_id = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    choice = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE, default=None)
+    submission_date = models.DateTimeField(auto_now_add=True)
+    error_message = models.TextField()
+    error_type = models.CharField(max_length=100)
+    
+    class Meta:
+        unique_together = ['user_id', 'quiz_id']

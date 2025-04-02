@@ -1,13 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import JsonResponse
-from django.db import transaction
-from .models import Post, Poll, PollChoice, Quiz, QuizQuestion
-from .forms import PostForm
-from django.contrib.auth.decorators import login_required
+from django.db import transaction, models
+from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User
+from .forms import PostForm, UserForm
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
 from rest_framework.views import APIView
 from .serializers import UserSerializer
+from .exceptions import QuizSubmissionError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -17,6 +18,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 
 # Create your views here.
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def home(request):
+    return Response({'message': 'Welcome to the Minscribe API!'}, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
@@ -53,55 +59,145 @@ def login_user(request):
         })
     else:
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+ 
+@api_view(['POST']) 
+@permission_classes([AllowAny])  
+def register_view(request):
+    if request.method == 'POST':
+        form = UserForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Process the data
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            # Hash password before saving
+            password = make_password(password)
+            user = User(username=username, password=password)
+            user.save()
+            messages.success(request, 'User created successfully.')
+            return redirect('login')
+    else:
+        form = UserForm()
+
+    return render(request, 'blog/registration/register.html', {'form': form})
+
+# Protected view
 class PostView(APIView):
-    def post_list_view(self, request):
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self, user=None):
         qs = Post.objects.all().published()
-        if request.user.is_authenticated:
-            my_qs = Post.objects.filter(user=request.user)
-            qs = (qs | my_qs).distinct()
-        template_name = 'blog/post_list.html'
-        context = {'object_list': qs}
-        return render(request, template_name, context)
+        if user and user.is_authenticated:
+            user_posts = Post.objects.filter(user=user)
+            qs = (qs | user_posts).distinct()
+        return qs
+    
+    def post_list_view(self, request):
+        try:
+            posts = self.get_queryset(user=request.user)
+            context = {
+                'object_list': posts,
+                'title': 'Blog Posts'
+            }
+            return render(request, 'blog/post_list.html', context)
+        except Exception as e:
+            # The `messages` in the Django code snippet provided is a part of Django's messaging
+            # framework. It is used to display messages to users after certain actions are performed.
+            # These messages can be used to provide feedback, notifications, or alerts to users based
+            # on their interactions with the web application.
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('home')
     
     def post_detail_view(self, request, slug):
-        obj = get_object_or_404(Post, slug=slug)
-        template_name = 'blog/post_detail.html'
-        context = {"object": obj}
-        return render(request, template_name, context)
+        try:
+            post = get_object_or_404(Post, slug=slug)
+            
+            # Check if user has permission to view the post
+            if not post.is_published and not request.user.is_staff:
+                if not request.user.is_authenticated or post.user != request.user:
+                    raise PermissionError("You do not have permission to view this post.")
+            
+            context = {
+                'object': post,
+                'title': post.title
+            }
+            return render(request, 'blog/post_detail.html', context)
+        except Exception as e:
+            messages.error(request, f"An error occurred loading post: {str(e)}")
+            return redirect('blog:post_list')
     
     @staff_member_required
     def post_create_view(self, request):
-        form = PostForm(request.POST or None, request.FILES or None)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.user = request.user
-            obj.save()
-            form = PostForm()
-        template_name = 'blog/form.html'
-        context = {'form': form}
-        return render(request, template_name, context)
+        try:
+            form = PostForm(request.POST or None, request.FILES or None)
+            if request.method == 'POST' and form.is_valid():
+                post = form.save(commit=False)
+                post.user = request.user
+                post.save()
+                messages.success(request, 'Post created successfully.')
+                return redirect('blog:post_detail', slug=post.slug)
+            
+            context = {
+                'form': form,
+                'title': 'Create New Post'
+            }
+            return render(request, 'blog/form.html', context)
+        except Exception as e:
+            messages.error(request, f"An error occurred creating post: {str(e)}")
+            return redirect('blog:post_list')
     
     @staff_member_required
     def post_update_view(self, request, slug):
-        obj = get_object_or_404(Post, slug=slug)
-        form = PostForm(request.POST or None, instance=obj)
-        if form.is_valid():
-            form.save()
-        template_name = 'blog/form.html'
-        context = {'form': form, 'title': f"Update {obj.title}"}
-        return render(request, template_name, context)
+        try:
+            post = get_object_or_404(Post, slug=slug)
+            
+            # Checking if user has permission to update the post
+            if not request.user.is_staff and post.user != request.user:
+                raise PermissionError("You do not have permission to update this post.")
+            
+            form = PostForm(data=request.POST or None, files=request.FILES or None, instance=post)
+            if request.method == 'POST' and form.is_valid():
+                form.save()
+                messages.success(request, 'Post updated successfully.')
+                return redirect('blog:post_detail', slug=post.slug)
+            
+            context = {
+                'form': form,
+                'title': f'Update {post.title}'
+            }
+            return render(request, 'blog/form.html', context)
+        except PermissionError as e:
+            messages.error(request, str(e))
+            return redirect('blog:post_list')
+        except Exception as e:
+            messages.error(request, f"An error occurred updating post: {str(e)}")
+            return redirect('blog:post_list')
     
+    @staff_member_required
     def post_delete_view(self, request, slug):
-        obj = get_object_or_404(Post, slug=slug)
-        if request.method == "POST":
-            obj.delete()
-            return redirect("/blog")
-        template_name = 'blog/post_delete.html'
-        context = {'object': obj}
-        return render(request, template_name, context)
-        
+        try:
+            post = get_object_or_404(Post, slug=slug)
+            
+            # Checking if user has permission to delete post
+            if not request.user.is_staff and post.user != request.user:
+                raise PermissionError("You do not have permission to delete this post.")
+            
+            if request.method == "POST":
+                post.delete()
+                messages.success(request, 'Post deleted successfully.')
+                return redirect('blog:post_list')
+            
+            context = {
+                'object': post,
+                'title': 'Delete {post.title}'
+            }
+            return render(request, 'blog/post_delete.html', context)
+        except PermissionError as e:
+            messages.error(request, str(e))
+            return redirect('blog:post_list')
+        except Exception as e:
+            messages.error(request, f"An error occurred deleting post: {str(e)}")
+            return redirect('blog:post_list')
 
+# Protected view
 class PollView(APIView):
     permission_classes = [IsAuthenticated]
     def create_poll(self, request):
@@ -213,7 +309,8 @@ class PollView(APIView):
                 'status': 'error',
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+# Protected view
 class QuizView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -268,12 +365,115 @@ class QuizView(APIView):
                 'status': 'error',
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Protected view
+class QuizSubmissionView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def validate_submission(self, quiz_id, choice_id):
+        if not quiz_id or not choice_id:
+            raise QuizSubmissionError(
+                "Missing required parameters: quiz_id and choice_id",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            quiz = get_object_or_404(Quiz, pk=quiz_id)
+            selected_choice = quiz.quizquestion_set.get(pk=choice_id).first()
+            
+            if not selected_choice:
+                raise QuizSubmissionError(
+                    "Invalid choice",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+                
+            return quiz, selected_choice
         
-    def submit_quiz(self, request, quiz_id):
-        quiz = get_object_or_404(Quiz, pk=quiz_id)
-        selected_choice = quiz.quizchoice_set.get(pk=request.POST['choice'])
-        if selected_choice.is_correct:
-            return JsonResponse({'status': 'success'})
-        else:
-            return JsonResponse({'status': 'error', 'message': 'Incorrect answer'})
+        except Quiz.DoesNotExist:
+            raise QuizSubmissionError(
+                "Invalid quiz",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+            
+    def check_quiz_availability(self, quiz):
+        if quiz.end_date and quiz.end_date < timezone.now():
+            raise QuizSubmissionError(
+                "Quiz has ended",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if not quiz.is_active:
+            raise QuizSubmissionError(
+                "Quiz is not active",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def process_submission(self, quiz, selected_choice, user):
+        try:
+            with transaction.atomic():
+                # Record submission
+                submission = quiz.submissions.create(
+                    user=user,
+                    choice=selected_choice,
+                    submitted_dat=timezone.now()
+                )
+                
+                # Update quiz statistics
+                selected_choice.times_chosen = models.F('times_chosen') + 1
+                selected_choice.save()
+                
+                response_data = {
+                    'is_correct': selected_choice.is_correct,
+                    'submission_id': submission.id,
+                    'feedback': selected_choice.feedback or None
+                }
+                
+                if selected_choice.is_correct:
+                    response_data.update({
+                        'message': 'Correct answer',
+                        'status': 'success',
+                        'points_earned': quiz.points
+                    })
+                else:
+                    response_data.update({
+                        'message': 'Incorrect answer',
+                        'status': 'error',
+                        'points_earned': 0
+                    })
+                    
+                return response_data
+            
+        except Exception as e:
+            raise QuizSubmissionError(
+                f"Error processing submission: {str(e)}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+    def post(self, request, quiz_id):
+        try:
+            choice_id = request.data.get('choice') 
+            if not choice_id:
+                raise QuizSubmissionError(
+                    "Missing choice_id",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+            
+            quiz, selected_choice = self.validate_submission(quiz_id, choice_id)
+            self.check_quiz_availability(quiz)
+            reponse_data = self.process_submission(quiz, selected_choice, request.user)
+            
+            return JsonResponse(reponse_data, status=status.HTTP_200_OK)
+        
+        except QuizSubmissionError as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=e.status_code)
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        
         
