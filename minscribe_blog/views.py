@@ -153,7 +153,7 @@ class PostView(APIView):
                 'form': form,
                 'title': 'Create New Post'
             }
-            return render(request, 'blog/form.html', context)
+            return render(request, 'blog/post_form.html', context)
         except Exception as e:
             messages.error(request, f"An error occurred creating post: {str(e)}")
             return redirect('blog:post_list')
