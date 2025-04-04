@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db import transaction, models
-from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User
+from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite
 from .forms import PostForm, UserForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
@@ -16,6 +16,10 @@ from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.template.loader import render_to_string
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.mail import send_mail
+from django.views import View
 
 # Create your views here.
 @api_view(['GET'])
@@ -490,4 +494,38 @@ class QuizSubmissionView(APIView):
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                         
+class CollaborationInviteView(LoginRequiredMixin, View):
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        invitee_email = request.POST.get('email')
+        role = request.POST.get('role')
         
+        try:
+            invitee = User.objects.get(email=invitee_email)
+            invite = CollaborationInvite.objects.create(
+                post=post,
+                inviter=request.user,
+                invitee=invitee,
+                role=role
+            )
+            
+            # Send email notification
+            context = {
+                'inviter': request.user,
+                'post': post,
+                'role': role,
+                'invite_id': invite.id
+            }
+            
+            email_html = render_to_string('blog/email/collaboration_invite.html', context)
+            send_mail(
+                subject='Collaboration Invitation',
+                message='',
+                from_email='noreply@mindscribe.com',
+                recipient_list=[invitee_email],
+                html_message=email_html
+            )
+            
+            return JsonResponse({'status': 'success'})
+        except User.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'User not found'})       

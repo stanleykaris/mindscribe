@@ -62,6 +62,10 @@ class Post(models.Model):
     has_poll = models.BooleanField(default=False)
     has_quiz = models.BooleanField(default=False)
     has_livestream = models.BooleanField(default=False)
+    collaborators = models.ManyToManyField(User, through='Collaboration', related_name='collaborative_posts')
+    is_collaborative = models.BooleanField(default=False)
+    version_history = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     def save(self, *args, **kwargs):
         self.markdown_content = md(self.content)
@@ -212,3 +216,47 @@ class QuizSubmission(models.Model):
     
     class Meta:
         unique_together = ['user_id', 'quiz_id']
+        
+class CollaborationInvite(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('expired', 'Expired')
+    ]
+    
+    ROLE_CHOICES = [
+        ('editor', 'Editor'),
+        ('reviewer', 'Reviewer'),
+        ('contributor', 'Contributor')
+    ]
+    
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inviter')
+    invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitee')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.expires_at = timezone.now() + timezone.timedelta(days=7)
+        super().save(*args, **kwargs)
+        
+class Collaboration(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=CollaborationInvite.ROLE_CHOICES)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    last_active = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('post', 'user')
+        
+class CollaborationHistory(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(default=dict)
