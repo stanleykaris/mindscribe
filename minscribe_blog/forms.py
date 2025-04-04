@@ -1,4 +1,5 @@
 from django import forms
+from tinymce.widgets import TinyMCE
 from .models import Post, User, Comments, CognitiveProfile
 
 # A form for creating and updating user instances
@@ -33,20 +34,25 @@ class UserForm(forms.ModelForm):
         return password
 # A form for creating and editing post objects
 class PostForm(forms.ModelForm):
+    content = forms.CharField(
+        widget=TinyMCE(
+            attrs={
+                'class': 'form-control',
+                'rows': 30,
+                'cols': 80,
+                'placeholder': 'Write your post here...'
+            },
+            mce_attrs={
+                'plugins': 'markdown',
+                'toolbar': 'undo redo | formatselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code',
+                'menubar': False
+            }
+        )
+    )
     class Meta:
         model = Post
         fields = ['title', 'content'] # fields to be included
-        widget = {
-            'content': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 5,
-                'placeholder': 'Write your post here...'
-            }),
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter post title'
-            })
-        }
+        
 
 # A form for creating and editing comments       
 class CommentForm(forms.ModelForm):

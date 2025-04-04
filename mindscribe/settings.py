@@ -41,7 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'minscribe_blog',
     'rest_framework',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'filebrowser',
+    'grappelli',
+    'tinymce',
+    'markdownify',
 ]
 
 REST_FRAMEWORK = {
@@ -111,6 +116,40 @@ TEMPLATES = [
     },
 ]
 
+# TinyMCE Editor configuration
+TINYMCE_DEFAULT_CONFIG = {
+    'height': 360,
+    'width': 'auto',
+    'cleanup_on_startup': True,
+    'custom_undo_redo_levels': 20,
+    'selector': 'textarea',
+    'theme': 'silver',
+    'plugins': '''
+        markdown searchreplace autolink directionality visualblocks visualchars fullscreen image link media template 
+        codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount 
+        textpattern help emoticons code
+        ''',
+    'toolbar1': '''
+        fullscreen preview | undo redo | formatselect | bold italic underline strikethrough | 
+        alignleft aligncenter alignright alignjustify | numlist bullist outdent indent | removeformat | code
+        ''',
+    'toolbar2': '''
+        visualblocks visualchars | link image media | codesample table | charmap emoticons | help
+        ''',
+    'content_style': 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+    'markdown_enabled': True,
+}
+
+# Markdownify Configuration
+MARKDOWNIFY = {
+    "default": {
+        "WHITELIST_TAGS": [
+            'a', 'abbr', 'acronym', 'b', 'blockquote', 'em', 'i', 'li', 'ol', 
+            'p', 'strong', 'ul', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'code'
+        ]
+    }
+}
+
 WSGI_APPLICATION = 'mindscribe.wsgi.application'
 
 
@@ -151,9 +190,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAdminUser',
     )
 }
 

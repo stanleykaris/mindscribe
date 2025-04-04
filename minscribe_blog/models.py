@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.conf import settings
+from markdownify import markdownify as md
+from tinymce.models import HTMLField
 # Create your models here.
 
 def validate_image_size(value):
@@ -42,7 +44,8 @@ class Post(models.Model):
     post_id = models.AutoField(primary_key=True, null=False)
     author_id = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     title = models.CharField(max_length=200, null=False)
-    content = models.TextField(null=False)
+    content = HTMLField(null=False)
+    markdown_content = models.TextField(blank=True)
     publication_date = models.DateTimeField(auto_now_add=True, null=False)
     last_edited = models.DateTimeField(auto_now=True, null=False)
     likes = models.IntegerField(default=0, null=False)
@@ -59,6 +62,10 @@ class Post(models.Model):
     has_poll = models.BooleanField(default=False)
     has_quiz = models.BooleanField(default=False)
     has_livestream = models.BooleanField(default=False)
+    
+    def save(self, *args, **kwargs):
+        self.markdown_content = md(self.content)
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return self.title

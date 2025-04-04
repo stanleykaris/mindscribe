@@ -7,6 +7,7 @@ app_name = 'mindscribe_blog'
 
 urlpatterns = [
     path('register/', views.register_view, name='register'),
+    path('logout/', views.logout_user, name='logout'),
     path('login/', views.login_user, name='login'),
     path('posts/', views.PostView.as_view(), name='post-list'),
     path('polls/create/', views.PollView.as_view(), name='create-poll'),

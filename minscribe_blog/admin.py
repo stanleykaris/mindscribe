@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import *
+from django.db import models
+from tinymce.widgets import TinyMCE
 # Register your models here.
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
