@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db import transaction, models
-from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite
+from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite, CollaborationHistory, Collaboration
 from .forms import PostForm, UserForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
@@ -529,3 +529,53 @@ class CollaborationInviteView(LoginRequiredMixin, View):
             return JsonResponse({'status': 'success'})
         except User.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'User not found'})       
+
+class CollaborationResponseView(LoginRequiredMixin, View):
+    def post(self, request, invite_id):
+        invite = get_object_or_404(CollaborationInvite, id=invite_id, invitee=request.user)
+        response = request.POST.get('response')
+        
+        if response == 'accept':
+            invite.status = 'accepted'
+            invite.post.add_collaborator(request.user, invite.role)
+            
+            CollaborationHistory.objects.create(
+                post=invite.post,
+                user=request.user,
+                action='joined_collaboration',
+                details={'role': invite.role}
+            )
+        else:
+            invite.status = 'rejected'
+            
+        invite.save()
+        return JsonResponse({'status': 'success'})
+
+class CollaborativeEditView(LoginRequiredMixin, View):
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        collaboration = get_object_or_404(Collaboration, post=post, user=request.user)
+        
+        if collaboration.role in ['editor', 'contributor']:
+            content = request.POST.get('content')
+            
+            # Save version history
+            post.version_history.append({
+                'user': request.user.username,
+                'timestamp': timezone.now().isoformat(),
+                'content': content,
+                'role': collaboration.role
+            })
+            
+            post.content = content
+            post.save()
+            
+            CollaborationHistory.objects.create(
+                post=post,
+                user=request.user,
+                action='edited_content',
+                details={'version': len(post.version_history)}
+            )
+            
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
