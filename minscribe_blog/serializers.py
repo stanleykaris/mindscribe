@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Poll, PollChoice, QuizQuestion, Quiz, QuizSubmission
+from .models import User, Poll, PollChoice, QuizQuestion, Quiz, QuizSubmission, Comments
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -81,3 +81,9 @@ class QuizSubmissionSerializer(serializers.Serializer):
     class Meta:
         model = QuizSubmission
         fields = ['submission_id', 'quiz_id', 'choice', 'submission_date']
+        
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comments
+        fields = ['id', 'post_id', 'author_id', 'content', 'publication_date', 'last_edited', 'likes', 'dislikes', 'moderation_flagged', 'moderation_reason']
+        read_only_fields = ['publication_date', 'last_edited', 'likes', 'dislikes', 'moderation_flagged', 'moderation_reason']
