@@ -7,7 +7,7 @@ from .forms import PostForm, UserForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from rest_framework.views import APIView
-from .serializers import UserSerializer
+from .serializers import UserSerializer, CommentSerializer
 from .exceptions import QuizSubmissionError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -233,6 +233,84 @@ class CommentView(APIView):
             return Response({'message': 'Comment added successfully.'}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def delete(self, request, comment_id):
+        try:
+            comment = get_object_or_404(Comments, pk=comment_id)
+
+            # Check if the user is the owner of the comment
+            if comment.user != request.user:
+                return Response({'error': 'You do not have permission to delete this comment.'}, status=status.HTTP_403_FORBIDDEN)
+
+            comment.delete()
+            return Response({'message': 'Comment deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def update(self, request, comment_id):
+        try:
+            comment = get_object_or_404(Comments, pk=comment_id)
+
+            # Check if the user is the owner of the comment
+            if comment.user != request.user:
+                return Response({'error': 'You do not have permission to update this comment.'}, status=status.HTTP_403_FORBIDDEN)
+
+            new_text = request.data.get('new_text')
+            if not new_text:
+                return Response({'error': 'New comment text is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            comment.text = new_text
+            comment.save()
+            return Response({'message': 'Comment updated successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def like(self, request, comment_id):
+        try:
+            comment = get_object_or_404(Comments, pk=comment_id)
+            user = request.user
+
+            # Check if the user has already liked the comment
+            if user in comment.likes.all():
+                return Response({'error': 'You have already liked this comment.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            comment.likes.add(user)
+            return Response({'message': 'Comment liked successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def dislike(self, request, comment_id):
+        try:
+            comment = get_object_or_404(Comments, pk=comment_id)
+            user = request.user
+            comment.likes.remove(user)
+            return Response({'message': 'Comment disliked successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def report(self, request, comment_id):
+        try:
+            comment = get_object_or_404(Comments, pk=comment_id)
+            user = request.user
+
+            # Check if the user has already reported the comment
+            if user in comment.reports.all():
+                return Response({'error': 'You have already reported this comment.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            comment.reports.add(user)
+            return Response({'message': 'Comment reported successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def get_comments(self, request, post_id):
+            try:
+                post = get_object_or_404(Post, pk=post_id)
+                comments = Comments.objects.filter(post=post).order_by('-created_at')
+                serializer = CommentSerializer(comments, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
 # Protected view
 class PollView(APIView):
     permission_classes = [IsAuthenticated]
@@ -572,7 +650,6 @@ class CollaborationResponseView(LoginRequiredMixin, View):
     def collaborations_all(self, request):
         collaborations = Collaboration.objects.filter(user=request.user)
         return render(request, 'blog/collaborations_all.html', {'collaborations': collaborations})
-        
 
 class CollaborativeEditView(LoginRequiredMixin, View):
     def post(self, request, post_id):
