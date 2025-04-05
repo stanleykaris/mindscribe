@@ -1,1 +1,12 @@
 INFO 2025-04-04 14:46:31,985 middleware 292307 129065155557056 No database queries for request: /
+INFO 2025-04-05 09:47:29,775 middleware 405738 127267210696384 No database queries for request: /
+INFO 2025-04-05 09:47:30,269 middleware 405738 127267111950016 No database queries for request: /favicon.ico
+INFO 2025-04-05 09:47:47,568 middleware 405738 127267111950016 No database queries for request: /posts/
+INFO 2025-04-05 09:48:32,011 middleware 405738 127267111950016 No database queries for request: /logout/
+INFO 2025-04-05 09:54:17,448 middleware 405738 127267111950016 No database queries for request: /register/
+INFO 2025-04-05 09:55:31,433 middleware 405738 127267111950016 No database queries for request: /register/
+INFO 2025-04-05 09:57:43,578 middleware 405738 127267111950016 No database queries for request: /login/
+INFO 2025-04-05 09:58:01,880 middleware 405738 127267111950016 No database queries for request: /login/
+INFO 2025-04-05 10:25:06,626 middleware 405738 127267111950016 No database queries for request: /login/
+INFO 2025-04-05 10:26:14,231 middleware 405738 127267111950016 No database queries for request: /login/
+INFO 2025-04-05 10:26:31,772 middleware 405738 127267111950016 No database queries for request: /register/
