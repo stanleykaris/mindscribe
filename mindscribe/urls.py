@@ -21,10 +21,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+def trigger_error(request):
+    division_by_zero = 1 / 0
+    return division_by_zero
+
 urlpatterns = [
     path('', include('minscribe_blog.urls', namespace='home')),
     path('admin/filebroswer/', site.urls),
     path('tinymce/', include('tinymce.urls')),
+    path('sentry-debug/', trigger_error),
     path('admin/', admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

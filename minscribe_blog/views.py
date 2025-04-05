@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db import transaction, models
-from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite, CollaborationHistory, Collaboration
+from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite, CollaborationHistory, Collaboration, Comments
 from .forms import PostForm, UserForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
@@ -20,6 +20,7 @@ from django.template.loader import render_to_string
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.views import View
+from django.shortcuts import render
 
 # Create your views here.
 @api_view(['GET'])
@@ -215,6 +216,23 @@ class PostView(APIView):
             messages.error(request, f"An error occurred deleting post: {str(e)}")
             return redirect('blog:post_list')
 
+# Protected View
+class CommentView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, post_id):
+        try:
+            post = get_object_or_404(Post, pk=post_id)
+            comment_text = request.data.get('comment_text')
+
+            if not comment_text:
+                return Response({'error': 'Comment text is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create a new comment
+            comment = Comments.objects.create(post=post, user=request.user, text=comment_text)
+            comment.save()
+            return Response({'message': 'Comment added successfully.'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 # Protected view
 class PollView(APIView):
     permission_classes = [IsAuthenticated]
@@ -550,6 +568,11 @@ class CollaborationResponseView(LoginRequiredMixin, View):
             
         invite.save()
         return JsonResponse({'status': 'success'})
+    
+    def collaborations_all(self, request):
+        collaborations = Collaboration.objects.filter(user=request.user)
+        return render(request, 'blog/collaborations_all.html', {'collaborations': collaborations})
+        
 
 class CollaborativeEditView(LoginRequiredMixin, View):
     def post(self, request, post_id):
@@ -577,5 +600,68 @@ class CollaborativeEditView(LoginRequiredMixin, View):
                 details={'version': len(post.version_history)}
             )
             
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
+    
+    def delete(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        collaboration = get_object_or_404(Collaboration, post=post, user=request.user)
+
+        if collaboration.role in ['editor', 'contributor']:
+            post.delete()
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
+    
+    def like(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        collaboration = get_object_or_404(Collaboration, post=post, user=request.user)
+
+        if collaboration.role in ['editor', 'contributor']:
+            post.likes += 1
+            post.save()
+
+            CollaborationHistory.objects.create(
+                post=post,
+                user=request.user,
+                action='liked_post'
+            )
+
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
+    
+    def dislike(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        collaboration = get_object_or_404(Collaboration, post=post, user=request.user)
+        
+        if collaboration.role in ['editor', 'contributor']:
+            post.dislikes += 1
+            post.save()
+
+            CollaborationHistory.objects.create(
+                post=post,
+                user=request.user,
+                action='disliked_post'
+            )
+
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
+    
+    def report(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        collaboration = get_object_or_404(Collaboration, post=post, user=request.user)
+        
+        if collaboration.role in ['editor', 'contributor']:
+            report_reason = request.POST.get('reason')
+            post.reported = True
+            post.report_reason = report_reason
+            post.save()
+
+            CollaborationHistory.objects.create(
+                post=post,
+                user=request.user,
+                action='reported_post',
+                details={'reason': report_reason}
+            )
+
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
