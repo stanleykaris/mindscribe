@@ -1,9 +1,14 @@
 from django.urls import path
 from . import views
+
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
 
 app_name = 'mindscribe_blog'
+
+router = DefaultRouter()
+router.register(r'profile', views.ProfileViewSet, basename='profile')
 
 urlpatterns = [
     path('register/', views.register_view, name='register'),
@@ -50,7 +55,7 @@ urlpatterns = [
     path('polls/<int:poll_id>/', views.PollView.as_view(), name='poll_detail'),
     path('quiz/<int:quiz_id>/', views.QuizView.as_view(), name='quiz_detail'),
     path('', views.home, name='home')
-]
+] + router.urls
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

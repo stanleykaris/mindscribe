@@ -3,14 +3,14 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.db import transaction, models
 from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite, CollaborationHistory, Collaboration, Comments
-from .forms import PostForm, UserForm
+from .forms import PostForm, UserForm, UserUpdateForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from rest_framework.views import APIView
-from .serializers import UserSerializer, CommentSerializer
+from .serializers import UserSerializer, CommentSerializer, AuthorProfileSerializer
 from .exceptions import QuizSubmissionError
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
@@ -52,6 +52,9 @@ def login_user(request):
     username = request.data.get('username')
     password = request.data.get('password')
     
+    if not username or not password:
+        return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+    
     user = authenticate(username=username, password=password)
     
     if user is not None:
@@ -60,8 +63,9 @@ def login_user(request):
             'tokens': {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-            }
-        })
+            },
+            'user': UserSerializer(user).data,
+        }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -99,6 +103,44 @@ def register_view(request):
 
     return render(request, 'blog/registration/register.html', {'form': form})
 
+# Protected view
+class ProfileViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.action in ['update_profile', 'change_password']:
+            return [IsAuthenticated]
+        return super().get_permissions()
+    
+    @action(detail=True, methods=['get'])
+    def author_profile(self, request, pk=None):
+        user = get_object_or_404(User, pk=pk)
+        
+        # Checks if user is an author (has posts)
+        if Post.objects.filter(user=user).exists():
+            serializer = AuthorProfileSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'User is not an author.'}, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['get'])    
+    def reader_profile(self, pk=None):
+        user = get_object_or_404(User, pk=pk)
+        
+        # Checks if user is a reader (has no posts)
+        if not Post.objects.filter(user=user).exists():
+            serializer = UserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'User is not a reader.'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['post'])
+    def update_profile(self, request):
+        serializer = UserUpdateForm(request.data, instance=request.user)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)       
+    
 # Protected view
 class PostView(APIView):
     permission_classes = [IsAuthenticated]

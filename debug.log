@@ -10,3 +10,6 @@ INFO 2025-04-05 09:58:01,880 middleware 405738 127267111950016 No database queri
 INFO 2025-04-05 10:25:06,626 middleware 405738 127267111950016 No database queries for request: /login/
 INFO 2025-04-05 10:26:14,231 middleware 405738 127267111950016 No database queries for request: /login/
 INFO 2025-04-05 10:26:31,772 middleware 405738 127267111950016 No database queries for request: /register/
+INFO 2025-04-05 13:03:59,362 middleware 10262 131688190441152 No database queries for request: /register/
+INFO 2025-04-05 14:50:35,395 middleware 56334 124888786400960 No database queries for request: /login/
+INFO 2025-04-05 14:51:28,436 middleware 56334 124888786400960 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 3, 'total_time': '0.628s', 'db_time': '0.020s', 'python_time': '0.608s'}

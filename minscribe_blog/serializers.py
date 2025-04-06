@@ -1,10 +1,11 @@
 from rest_framework import serializers
-from .models import User, Poll, PollChoice, QuizQuestion, Quiz, QuizSubmission, Comments
+from .models import User, Poll, PollChoice, QuizQuestion, Quiz, QuizSubmission, Comments, Post
+from django.db.models import Sum
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name', 'phone_number', 'profile_image')
+        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name')
         extra_kwargs = {
             'password': {'write_only': True},
             'email': {'required': True},
@@ -34,7 +35,35 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         
         return user
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'title', 'content', 'author', 'publication_date', 'last_edited', 'likes', 'dislikes', 'views', 'comment_count', 'status', 'moderation_flagged', 'moderation_reason', 'ai_summary', 'ai_keywords', 'ai_sentiment', 'ai_translation', 'has_poll', 'has_quiz', 'has_livestream', 'collaborators', 'is_collaborative', 'version_history', 'created_at']
+        read_only_fields = ['comment_count', 'version_history', 'created_at']
+        
+class AuthorProfileSerializer(serializers.ModelSerializer):
+    total_posts = serializers.SerializerMethodField()
+    total_likes = serializers.SerializerMethodField()
+    posts = serializers.SerializerMethodField()
     
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'profile_picture', 'bio', 'total_posts', 'total_likes', 'posts']
+        read_only_fields = ['total_posts', 'total_likes', 'posts']
+        
+    def get_total_posts(self, obj):
+        return Post.objects.filter(author=obj).count()
+    
+    def get_total_likes(self, obj):
+        return Post.objects.filter(author=obj).aggregate(total_likes=Sum('likes'))['total_likes']
+    
+    def get_posts(self, obj):
+        posts = Post.objects.filter(author=obj)
+        return PostSerializer(posts, many=True).data
+    
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)   
 class PollChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = PollChoice
