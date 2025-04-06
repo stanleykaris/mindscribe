@@ -1,3 +1,9 @@
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import JsonResponse
@@ -90,25 +96,32 @@ def logout_user(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
  
-@api_view(['POST']) 
-@permission_classes([AllowAny])  
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def register_view(request):
-    if request.method == 'POST':
-        form = UserForm(request.POST, request.FILES)
-        if form.is_valid():
-            # Process the data
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            # Hash password before saving
-            password = make_password(password)
-            user = User(username=username, password=password)
-            user.save()
-            messages.success(request, 'User created successfully.')
-            return redirect('login')
-    else:
-        form = UserForm()
-
-    return render(request, 'blog/registration/register.html', {'form': form})
+    """
+    Handles user registration via POST request.
+    Validates input data, hashes password, saves user, and returns tokens.
+    """
+    serializer = UserRegistrationSerializer(data=request.data)
+    if serializer.is_valid():
+        password = serializer.validated_data.get('password')
+        if not password:
+            return Response({'error': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.validated_data['password'] = make_password(password)
+        user = serializer.save()
+        
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            },
+            'user': UserSerializer(user).data,
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Protected view
 class ProfileViewSet(viewsets.ViewSet):

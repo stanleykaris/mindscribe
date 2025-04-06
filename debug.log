@@ -22,3 +22,130 @@ INFO 2025-04-06 03:53:09,087 middleware 108427 134412387915456 Request processed
 INFO 2025-04-06 04:06:11,234 middleware 112994 138400464279232 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.042s', 'db_time': '0.002s', 'python_time': '0.040s'}
 INFO 2025-04-06 04:09:01,408 middleware 112994 138400464279232 No database queries for request: /api/register/
 INFO 2025-04-06 04:09:45,352 middleware 112994 138400464279232 No database queries for request: /api/register/
+INFO 2025-04-06 04:25:17,319 middleware 123566 131504248190656 No database queries for request: /api/register/
+INFO 2025-04-06 04:28:57,494 middleware 123566 131504248190656 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.045s', 'db_time': '0.003s', 'python_time': '0.042s'}
+ERROR 2025-04-06 04:39:35,554 middleware 126573 139088682456768 Exception during request: /api/register/
+Error: Field name `id` is not valid for model `User` in `minscribe_blog.serializers.UserSerializer`.
+Traceback (most recent call last):
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/sentry_sdk/integrations/django/views.py", line 94, in sentry_wrapped_callback
+    return callback(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/minscribe_blog/views.py", line 121, in register_view
+    'user': UserSerializer(user).data,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Field name `id` is not valid for model `User` in `minscribe_blog.serializers.UserSerializer`.
+WARNING 2025-04-06 04:39:35,865 middleware 126573 139088682456768 Slow request detected: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 11, 'total_time': '2.299s', 'db_time': '0.047s', 'python_time': '2.252s'}
+INFO 2025-04-06 04:40:56,002 middleware 127027 133107420403392 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.041s', 'db_time': '0.007s', 'python_time': '0.034s'}
+ERROR 2025-04-06 04:41:41,465 middleware 127027 133107420403392 Exception during request: /api/register/
+Error: Field name `first_name` is not valid for model `User` in `minscribe_blog.serializers.UserSerializer`.
+Traceback (most recent call last):
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/sentry_sdk/integrations/django/views.py", line 94, in sentry_wrapped_callback
+    return callback(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/minscribe_blog/views.py", line 121, in register_view
+    'user': UserSerializer(user).data,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/stano-karis/Documents/Projects/mindscribe/.venv/lib/python3.12/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Field name `first_name` is not valid for model `User` in `minscribe_blog.serializers.UserSerializer`.
+WARNING 2025-04-06 04:41:41,674 middleware 127027 133107420403392 Slow request detected: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 10, 'total_time': '2.171s', 'db_time': '0.020s', 'python_time': '2.151s'}
+INFO 2025-04-06 04:47:46,280 middleware 128261 125264197580480 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.037s', 'db_time': '0.003s', 'python_time': '0.034s'}
+INFO 2025-04-06 04:48:00,659 middleware 128261 125264197580480 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 3, 'total_time': '0.007s', 'db_time': '0.002s', 'python_time': '0.005s'}
+WARNING 2025-04-06 04:48:17,480 middleware 128261 125264197580480 Slow request detected: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 7, 'total_time': '1.938s', 'db_time': '0.015s', 'python_time': '1.923s'}
+INFO 2025-04-06 05:01:25,327 middleware 5702 124808186730176 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.045s', 'db_time': '0.016s', 'python_time': '0.029s'}
+INFO 2025-04-06 05:01:45,203 middleware 5702 124808186730176 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 3, 'total_time': '0.008s', 'db_time': '0.002s', 'python_time': '0.006s'}
+INFO 2025-04-06 05:57:28,184 middleware 5702 124808186730176 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 3, 'total_time': '0.008s', 'db_time': '0.002s', 'python_time': '0.006s'}

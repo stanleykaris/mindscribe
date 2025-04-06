@@ -16,7 +16,7 @@ from django.contrib.auth.hashers import make_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name')
+        fields = ( 'username', 'email', 'password')
         extra_kwargs = {
             'password': {'write_only': True},
             'email': {'required': True},
@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
         )
         user.set_password(validated_data['password'])
         
-        for field in ['first_name', 'last_name', 'phone_number', 'profile_image']:
+        for field in ['phone_number', 'profile_image']:
             if field in validated_data:
                 setattr(user, field, validated_data[field])
                 
@@ -53,7 +53,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['username', 'email', 'password', 'first_name', 'last_name']
+        fields = ['username', 'email', 'password']
 
     def validate(self, data):
         """Ensure username and email are unique."""
