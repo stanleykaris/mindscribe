@@ -33,16 +33,23 @@ def home(request):
 def register_user(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
-        # Hash password before saving
-        serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
+        # Ensure password is provided and hash it before saving
+        password = serializer.validated_data.get('password')
+        if not password:
+            return Response({'error': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.validated_data['password'] = make_password(password)
+        
+        # Save the user
         user = serializer.save()
         
-        # Generating tokens
+        # Generate tokens for the new user
         refresh = RefreshToken.for_user(user)
-        
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            },
+            'user': UserSerializer(user).data,
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
