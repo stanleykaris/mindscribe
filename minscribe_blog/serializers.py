@@ -1,6 +1,17 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from rest_framework.validators import UniqueValidator
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator
+from rest_framework import serializers
 from .models import User, Poll, PollChoice, QuizQuestion, Quiz, QuizSubmission, Comments, Post
+from django.contrib.auth import get_user_model
 from django.db.models import Sum
+from django.contrib.auth.hashers import make_password
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,6 +45,34 @@ class UserSerializer(serializers.ModelSerializer):
                 
         user.save()
         
+        return user
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    email = serializers.EmailField(validators=[UniqueValidator(queryset=get_user_model().objects.all())])
+
+    class Meta:
+        model = get_user_model()
+        fields = ['username', 'email', 'password', 'first_name', 'last_name']
+
+    def validate(self, data):
+        """Ensure username and email are unique."""
+        if get_user_model().objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError("Username already exists.")
+        if get_user_model().objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError("Email already exists.")
+        return data
+
+    def create(self, validated_data):
+        """Create a new user with a hashed password."""
+        validated_data['password'] = make_password(validated_data['password'])
+        user = get_user_model().objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', '')
+        )
         return user
 
 class PostSerializer(serializers.ModelSerializer):

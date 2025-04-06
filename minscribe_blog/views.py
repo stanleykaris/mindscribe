@@ -7,7 +7,7 @@ from .forms import PostForm, UserForm, UserUpdateForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from rest_framework.views import APIView
-from .serializers import UserSerializer, CommentSerializer, AuthorProfileSerializer
+from .serializers import UserSerializer, CommentSerializer, AuthorProfileSerializer, UserRegistrationSerializer
 from .exceptions import QuizSubmissionError
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, action
@@ -31,7 +31,7 @@ def home(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    serializer = UserSerializer(data=request.data)
+    serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         # Ensure password is provided and hash it before saving
         password = serializer.validated_data.get('password')

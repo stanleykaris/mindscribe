@@ -26,7 +26,7 @@ def trigger_error(request):
     return division_by_zero
 
 urlpatterns = [
-    path('', include('minscribe_blog.urls', namespace='home')),
+    path('api/', include('minscribe_blog.urls', namespace='home')),
     path('admin/filebroswer/', site.urls),
     path('tinymce/', include('tinymce.urls')),
     path('sentry-debug/', trigger_error),

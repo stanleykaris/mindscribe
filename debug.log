@@ -19,3 +19,6 @@ INFO 2025-04-06 03:51:57,868 middleware 108427 134412387915456 No database queri
 INFO 2025-04-06 03:52:33,498 middleware 108427 134412387915456 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 2, 'total_time': '0.413s', 'db_time': '0.001s', 'python_time': '0.412s'}
 INFO 2025-04-06 03:52:47,169 middleware 108427 134412387915456 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 2, 'total_time': '0.655s', 'db_time': '0.001s', 'python_time': '0.654s'}
 INFO 2025-04-06 03:53:09,087 middleware 108427 134412387915456 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 2, 'total_time': '0.436s', 'db_time': '0.001s', 'python_time': '0.435s'}
+INFO 2025-04-06 04:06:11,234 middleware 112994 138400464279232 Request processed: {'path': '/api/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.042s', 'db_time': '0.002s', 'python_time': '0.040s'}
+INFO 2025-04-06 04:09:01,408 middleware 112994 138400464279232 No database queries for request: /api/register/
+INFO 2025-04-06 04:09:45,352 middleware 112994 138400464279232 No database queries for request: /api/register/
