@@ -13,3 +13,9 @@ INFO 2025-04-05 10:26:31,772 middleware 405738 127267111950016 No database queri
 INFO 2025-04-05 13:03:59,362 middleware 10262 131688190441152 No database queries for request: /register/
 INFO 2025-04-05 14:50:35,395 middleware 56334 124888786400960 No database queries for request: /login/
 INFO 2025-04-05 14:51:28,436 middleware 56334 124888786400960 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 3, 'total_time': '0.628s', 'db_time': '0.020s', 'python_time': '0.608s'}
+INFO 2025-04-06 03:47:29,226 middleware 108427 134412387915456 Request processed: {'path': '/register/', 'method': 'POST', 'user': 'anonymous', 'query_count': 4, 'total_time': '0.080s', 'db_time': '0.044s', 'python_time': '0.036s'}
+INFO 2025-04-06 03:51:39,583 middleware 108427 134412387915456 No database queries for request: /login/
+INFO 2025-04-06 03:51:57,868 middleware 108427 134412387915456 No database queries for request: /login/
+INFO 2025-04-06 03:52:33,498 middleware 108427 134412387915456 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 2, 'total_time': '0.413s', 'db_time': '0.001s', 'python_time': '0.412s'}
+INFO 2025-04-06 03:52:47,169 middleware 108427 134412387915456 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 2, 'total_time': '0.655s', 'db_time': '0.001s', 'python_time': '0.654s'}
+INFO 2025-04-06 03:53:09,087 middleware 108427 134412387915456 Request processed: {'path': '/login/', 'method': 'POST', 'user': 'anonymous', 'query_count': 2, 'total_time': '0.436s', 'db_time': '0.001s', 'python_time': '0.435s'}
