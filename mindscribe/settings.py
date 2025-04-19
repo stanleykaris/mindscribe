@@ -14,11 +14,14 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 sentry_sdk.init(
     dsn="https://462a0ce85433008dadc77dfa836c3e38@o4507482050527232.ingest.us.sentry.io/4509099540414464",
     # Add data like request headers and IP for users,
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,
     send_default_pii=True,
 )
 

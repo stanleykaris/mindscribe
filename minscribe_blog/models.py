@@ -63,6 +63,7 @@ class Post(models.Model):
     has_quiz = models.BooleanField(default=False)
     has_livestream = models.BooleanField(default=False)
     collaborators = models.ManyToManyField(User, through='Collaboration', related_name='collaborative_posts')
+    original_author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='original_posts')
     is_collaborative = models.BooleanField(default=False)
     version_history = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -232,12 +233,15 @@ class CollaborationInvite(models.Model):
     ]
     
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inviter')
+    inviter = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='inviter', null=True)
     invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitee')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
+    
+    class Meta:
+        unique_together = ('post', 'invitee')
     
     def save(self, *args, **kwargs):
         if not self.pk:
