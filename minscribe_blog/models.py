@@ -264,3 +264,14 @@ class CollaborationHistory(models.Model):
     action = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
     details = models.JSONField(default=dict)
+    
+class VersionHistory(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True)
+    version_number = models.IntegerField()
+    
+    def __str__(self):
+        return f"Version {self.id} of {self.post.title} by {self.user.username} on {self.timestamp}"

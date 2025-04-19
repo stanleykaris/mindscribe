@@ -1,0 +1,54 @@
+<!-- templates/blog/invite_collaborator.html -->
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Send Invitation</button>
+</form>
+
+<!-- templates/blog/manage_collaborations.html -->
+<h2>Received Invitations</h2>
+{% for invite in received_invites %}
+    <div class="invite">
+        <p>{{ invite.post.title }} - {{ invite.role }}</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="invite_id" value="{{ invite.id }}">
+            <button type="submit" name="action" value="accept">Accept</button>
+            <button type="submit" name="action" value="reject">Reject</button>
+        </form>
+    </div>
+{% endfor %}
+
+<h2>Sent Invitations</h2>
+{% for invite in sent_invites %}
+    <div class="invite">
+        <p>{{ invite.post.title }} - {{ invite.invitee.username }}</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="invite_id" value="{{ invite.id }}">
+            <button type="submit" name="action" value="cancel">Cancel</button>
+        </form>
+    </div>
+{% endfor %}
+
+<!-- templates/blog/collaboration_history.html -->
+<h2>Collaboration History</h2>
+<h3>Collaborators</h3>
+<ul>
+{% for collab in collaborators %}
+    <li>{{ collab.user.username }} ({{ collab.role }})</li>
+{% endfor %}
+</ul>
+
+<h3>Version History</h3>
+<ul>
+{% for version in versions %}
+    <li>
+        Version {{ version.version_number }} by {{ version.user.username }}
+        <small>{{ version.timestamp }}</small>
+        {% if version.reason %}
+            <p>Reason: {{ version.reason }}</p>
+        {% endif %}
+    </li>
+{% endfor %}
+</ul>

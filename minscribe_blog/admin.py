@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import *
+from .models import User, Post, Comments, Tag, PostTag, Category, PostCategory, CognitiveProfile, VersionHistory, Collaboration
 from django.db import models
 from tinymce.widgets import TinyMCE
 # Register your models here.
@@ -82,4 +82,37 @@ class CognitiveProfileAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             return qs.filter(user_id=request.user)
         return qs
+
+@admin.register(Collaboration)
+class CollaboratorAdmin(admin.ModelAdmin):
+    list_display = ('user_id', 'post_id', 'role')
+    list_filter = ('role',)
+    search_fields = ('user_id__username', 'post_id__title')
     
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.user_id = request.user
+        super().save_model(request, obj, form, change)
+        
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if not request.user.is_superuser:
+            return qs.filter(user_id=request.user)
+        return qs
+    
+@admin.register(VersionHistory)
+class VersionHistoryAdmin(admin.ModelAdmin):
+    list_display = ('post_id', 'version_number', 'timestamp')
+    list_filter = ('version_number',)
+    search_fields = ('post_id__title',)
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.post_id = request.user
+        super().save_model(request, obj, form, change)
+        
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if not request.user.is_superuser:
+            return qs.filter(post_id=request.user)
+        return qs

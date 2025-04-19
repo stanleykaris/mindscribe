@@ -7,9 +7,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.http import JsonResponse
+from django.core.exceptions import PermissionDenied
 from django.db import transaction, models
 from .models import Post, Poll, PollChoice, Quiz, QuizQuestion, User, CollaborationInvite, CollaborationHistory, Collaboration, Comments
-from .forms import PostForm, UserForm, UserUpdateForm
+from .forms import PostForm, UserForm, UserUpdateForm, CollaborationInviteForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from rest_framework.views import APIView
@@ -20,6 +21,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.template.loader import render_to_string
@@ -655,38 +657,51 @@ class QuizSubmissionView(APIView):
 class CollaborationInviteView(LoginRequiredMixin, View):
     def post(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        invitee_email = request.POST.get('email')
-        role = request.POST.get('role')
         
-        try:
-            invitee = User.objects.get(email=invitee_email)
-            invite = CollaborationInvite.objects.create(
-                post=post,
-                inviter=request.user,
-                invitee=invitee,
-                role=role
-            )
-            
-            # Send email notification
-            context = {
-                'inviter': request.user,
-                'post': post,
-                'role': role,
-                'invite_id': invite.id
-            }
-            
-            email_html = render_to_string('blog/email/collaboration_invite.html', context)
-            send_mail(
-                subject='Collaboration Invitation',
-                message='',
-                from_email='noreply@mindscribe.com',
-                recipient_list=[invitee_email],
-                html_message=email_html
-            )
-            
-            return JsonResponse({'status': 'success'})
-        except User.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'User not found'})       
+        # Check if user has permission to invite collaborators
+        if not (request.user == post.author_id or Collaboration.objects.filter(post=post, user=request.user, role__in=['editor', 'contributor']).exists()):
+            raise PermissionDenied("You do not have permission to invite collaborators.")
+        
+        if request.method == 'POST':
+            form = CollaborationInviteForm(request.POST)
+            if form.is_valid():
+                email = form.cleaned_data['email']
+                role = form.cleaned_data['role']
+                
+                # Check if user already exists
+                if User.objects.filter(email=email).exists():
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'User already exists'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Create collaboration invite
+                invite = CollaborationInvite.objects.create(
+                    post=post,
+                    invitee=request.user,
+                    email=email,
+                    role=role
+                )
+                
+                # Send email notification
+                subject = "Collaboration Invite"
+                message = render_to_string('blog/collaboration_invite_email.html', {
+                    'invite': invite,
+                    'post': post,
+                    'user': request.user
+                })
+                
+                send_mail(subject, message, None, [email])
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Invite sent successfully'
+                }, status=status.HTTP_200_OK)
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Invalid form data'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
 class CollaborationResponseView(LoginRequiredMixin, View):
     def post(self, request, invite_id):
@@ -804,3 +819,4 @@ class CollaborativeEditView(LoginRequiredMixin, View):
 
             return JsonResponse({'status': 'success'})
         return JsonResponse({'status': 'error', 'message': 'Insufficient permissions'})
+    

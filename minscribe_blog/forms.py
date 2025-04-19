@@ -1,6 +1,6 @@
 from django import forms
 from tinymce.widgets import TinyMCE
-from .models import Post, User, Comments, CognitiveProfile
+from .models import Post, User, Comments, CognitiveProfile, CollaborationInvite
 
 # A form for creating and updating user instances
 class UserForm(forms.ModelForm):
@@ -100,7 +100,7 @@ class UserUpdateForm(forms.ModelForm):
         return email
 
 # A form for users to change their password, ensuring the new password meets requirements   
-class PasswordChageForm(forms.Form):
+class PasswordChageForm(forms.ModelForm):
     current_password = forms.CharField(widget=forms.PasswordInput)
     new_password = forms.CharField(widget=forms.PasswordInput)
     
@@ -115,3 +115,24 @@ class PasswordChageForm(forms.Form):
             if len(new_password) < 8:
                 raise forms.ValidationError("New password must be at least 8 characters long")
         return cleaned_data
+    
+class CollaborationInviteForm(forms.ModelForm):
+    email = forms.EmailField(help_text="Enter the email of the collaborator you want to invite")
+    
+    class Meta:
+        model = CollaborationInvite
+        fields = ['role']
+        
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("This user is already a collaborator.")
+        return email
+    
+class PostDraftForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title', 'content']
+        widgets = {
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 10}),
+        }
